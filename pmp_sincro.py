@@ -178,42 +178,16 @@ def correlacion_con_timestamp(sig1, sig2, start_time=None, end_time=None,
 def reescalar_senhal(dict, rescaling_log_dir):
     ref_file = dict['ref_file']
     segment_ref_file = dict['segment ref file']
-    time_sincro_ref_file = dict['time_sincro_ref_file']
+    time_sincro_ref_file = datetime.strptime(dict['time_sincro_ref_file'], "%H:%M:%S").time() if dict.get('time_sincro_ref_file') else None
     sample_sincro_ref_file = dict['sample_sincro_ref_file']
     target_file = dict['target_file']
     activity_file = dict['activity_file']
     segment_target_file = dict['segment target file']
     sample_sincro_target_file = dict['sample_sincro_target_file']
-    time_sincro_target_file = dict['time_sincro_target_file']
+    time_sincro_target_file = datetime.strptime(dict['time_sincro_target_file'], "%H:%M:%S").time() if dict.get('time_sincro_target_file') else None
     offset_range = dict['offset_range']
     offset_step = dict['offset_step']
     
-
-    # Coerce any string time representations into datetime.time objects
-    def _coerce_time(t):
-        if t is None:
-            return None
-        if isinstance(t, time):
-            return t
-        if isinstance(t, datetime):
-            return t.time()
-        if isinstance(t, str):
-            # try ISO format first
-            try:
-                dt = datetime.fromisoformat(t)
-                return dt.time()
-            except Exception:
-                pass
-            # try HH:MM:SS
-            try:
-                return datetime.strptime(t, "%H:%M:%S").time()
-            except Exception:
-                pass
-        # as a last resort, return None
-        return None
-
-    time_sincro_ref_file = _coerce_time(time_sincro_ref_file)
-    time_sincro_target_file = _coerce_time(time_sincro_target_file)
 
     ref_scaled_data, dic_timing_ref = WPM_utils.load_scale_WPM_data(
         ref_file,
@@ -302,7 +276,6 @@ def reescalar_senhal_2(signal_ref_raw, signal_target_raw, activity_file, segment
             best_K = K
             best_offset = offset
             best_signal_target_scaled_raw = signal_target_scaled_raw.copy()
-            best_signal_target_scaled_enmo = signal_target_scaled_enmo.copy()
 
         print(f"Offset: {offset} -> Correlación: {corre:.4f}")
         correlations.append(corre)
@@ -328,8 +301,9 @@ def reescalar_senhal_2(signal_ref_raw, signal_target_raw, activity_file, segment
     return best_signal_target_scaled_raw, correlations, best_K, best_offset
 
 
-def save_reescale_log(best_k, best_offset, correlations, log_dir=None):
+def save_reescale_log(best_k, best_offset, correlations, inputs_dict=None, log_dir=None):
     """
+    Guarda un log con los resultados del reescalado incluyendo los parámetros de entrada.
     """
     if log_dir is None:
         log_dir = "."
@@ -342,9 +316,12 @@ def save_reescale_log(best_k, best_offset, correlations, log_dir=None):
         "best_offset": int(best_offset),
         "correlations": [float(c) if not np.isnan(c) else None for c in correlations]
     }
+    
+    if inputs_dict is not None:
+        log_entry["inputs"] = inputs_dict
 
     with open(log_path, "a") as f:
-        f.write(json.dumps(log_entry) + "\n")
+        f.write(json.dumps(log_entry, indent=2, default=str) + "\n")
 
 #######################################
 ######################################
@@ -455,13 +432,15 @@ def procesar_datos_1050():
     inputs_1050_M = {
             'ref_file': f"{base_dir}/{sujeto}/{sujeto}_W1_PI.csv",
             'segment ref file': 'PI',
-            'time_sincro_ref_file': datetime.strptime("12:34:11", "%H:%M:%S").time(),
+            #'time_sincro_ref_file': datetime.strptime("12:34:11", "%H:%M:%S").time(),
+            'time_sincro_ref_file': "12:34:11",
             'sample_sincro_ref_file':12012445,
             'target_file': f"{base_dir}/{sujeto}/{sujeto}_W1_M.csv",
             'activity_file': f"{base_dir}/{sujeto}/{sujeto}_RegistroActividades.xlsx",
             'segment target file': 'M',
             'sample_sincro_target_file': 13378200,
-            'time_sincro_target_file': datetime.strptime("12:44:20", "%H:%M:%S").time().isoformat(),
+            #'time_sincro_target_file': datetime.strptime("12:44:20", "%H:%M:%S").time().isoformat(),
+            'time_sincro_target_file': "12:44:20",
             'offset_range': 100,
             'offset_step': 1,   
         }
@@ -469,13 +448,13 @@ def procesar_datos_1050():
     inputs_1050_C = {
             'ref_file': f"{base_dir}/{sujeto}/{sujeto}_W1_PI.csv",
             'segment ref file': 'PI',
-            'time_sincro_ref_file': datetime.strptime("12:34:11", "%H:%M:%S").time(),
-            'sample_sincro_ref_file':12012445,
+            'time_sincro_ref_file': "12:34:11",
+            'sample_sincro_ref_file': 12012445,
             'target_file': f"{base_dir}/{sujeto}/{sujeto}_W1_C.csv",
             'activity_file': f"{base_dir}/{sujeto}/{sujeto}_RegistroActividades.xlsx",
             'segment target file': 'C',
             'sample_sincro_target_file': 12591189,
-            'time_sincro_target_file': datetime.strptime("12:34:11", "%H:%M:%S").time(),
+            'time_sincro_target_file': "12:34:11",
             'offset_range': 100,
             'offset_step': 1,   
         }
@@ -489,7 +468,7 @@ def procesar_datos_1050():
     print("#----------------------------------------#")
     print("Mejor K para PMP1050_M:", best_K_1050_M)
     print("Mejor offset para PMP1050_M:", best_offset_1050_M)
-    save_reescale_log(best_K_1050_M, best_offset_1050_M, correlations_1050_M, log_dir)
+    save_reescale_log(best_K_1050_M, best_offset_1050_M, correlations_1050_M, inputs_1050_M, log_dir)
     np.savez_compressed(f"{base_dir}/{sujeto}/rescaled_raw_1050_M.npz", datos=rescaled_raw_1050_M)
     
     
@@ -497,9 +476,37 @@ def procesar_datos_1050():
     print("#----------------------------------------#")
     print("Mejor K para PMP1050_C:", best_K_1050_C)
     print("Mejor offset para PMP1050_C:", best_offset_1050_C)
-    save_reescale_log(best_K_1050_C, best_offset_1050_C, correlations_1050_C, log_dir)
+    save_reescale_log(best_K_1050_C, best_offset_1050_C, correlations_1050_C, inputs_1050_C, log_dir)
     np.savez_compressed(f"{base_dir}/{sujeto}/rescaled_raw_1050_C.npz", datos=rescaled_raw_1050_C)
 
+def reescala(base_dir, sujeto, segmento_ref, segmento_target, time_sincro_ref_file, sample_sincro_ref_file, time_sincro_target_file, sample_sincro_target_file, offset_range, step_range):
+
+    base_dir = "./data"
+        
+    inputs = {
+            'ref_file': f"{base_dir}/{sujeto}/{sujeto}_W1_{segmento_ref}.csv",
+            'segment ref file': segmento_ref,
+            'time_sincro_ref_file': time_sincro_ref_file,
+            'sample_sincro_ref_file': sample_sincro_ref_file,
+            'target_file': f"{base_dir}/{sujeto}/{sujeto}_W1_{segmento_target}.csv",
+            'activity_file': f"{base_dir}/{sujeto}/{sujeto}_RegistroActividades.xlsx",
+            'segment target file': segmento_target,
+            'sample_sincro_target_file': sample_sincro_target_file,
+            'time_sincro_target_file': time_sincro_target_file,
+            'offset_range': offset_range,
+            'offset_step': step_range,   
+        }
+    
+    log_dir = f"{base_dir}/{sujeto}/rescaling_log_{segmento_target}"
+    os.makedirs(log_dir, exist_ok=True)
+    print(f"Created or exists: {log_dir}")
+
+    rescaled_raw, correlations, best_K, best_offset = reescalar_senhal(inputs, log_dir)
+    print("#----------------------------------------#")
+    print(f"Mejor K para {sujeto}_{segmento_target}:", best_K)
+    print(f"Mejor offset para {sujeto}_{segmento_target}:", best_offset)
+    save_reescale_log(best_K, best_offset, correlations, inputs, log_dir)
+    np.savez_compressed(f"{base_dir}/{sujeto}/rescaled_raw_{sujeto}_{segmento_target}.npz", datos=rescaled_raw )
 
 def procesar_datos_1049():
 
@@ -542,7 +549,7 @@ def procesar_datos_1049():
     print("#----------------------------------------#")
     print("Mejor K para PMP1049_M:", best_K_1049_M)
     print("Mejor offset para PMP1049_M:", best_offset_1049_M)
-    save_reescale_log(best_K_1049_M, best_offset_1049_M, correlations_1049_M, log_dir)
+    save_reescale_log(best_K_1049_M, best_offset_1049_M, correlations_1049_M, inputs_1049_M, log_dir)
     np.savez_compressed(f"{base_dir}/{sujeto}/rescaled_raw_1049_M.npz", datos=rescaled_raw_1049_M)
 
 
@@ -550,12 +557,34 @@ def procesar_datos_1049():
     print("#----------------------------------------#")
     print("Mejor K para PMP1049_C:", best_K_1049_C)
     print("Mejor offset para PMP1049_C:", best_offset_1049_C)
-    save_reescale_log(best_K_1049_C, best_offset_1049_C, correlations_1049_C, log_dir)
+    save_reescale_log(best_K_1049_C, best_offset_1049_C, correlations_1049_C, inputs_1049_C, log_dir)
     np.savez_compressed(f"{base_dir}/{sujeto}/rescaled_raw_1049_C.npz", datos=rescaled_raw_1049_C)
 
 
 if __name__ == "__main__":
-    procesar_datos_1049()
+    #procesar_datos_1049()
     #procesar_datos_1050()
+    
+    # reescala("./data", "PMP1050", 
+    #          'PI', 'M', 
+    #          "12:34:11", 12012445, 
+    #          "12:44:20", 13378200, 
+    #          100, 40)
+    # reescala("./data", "PMP1050", 
+    #          'PI', 'C', 
+    #          "12:34:11", 12012445, 
+    #          "12:34:11", 12591189, 
+    #          100, 40)
 
- 
+###
+
+    reescala("./data", "PMP1049", 
+             'PI', 'M', 
+             None, None, 
+             None, None, 
+             100, 40)
+    reescala("./data", "PMP1049", 
+             'PI', 'C', 
+             None, None, 
+             None, None, 
+             100, 40)
