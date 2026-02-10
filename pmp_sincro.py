@@ -68,10 +68,17 @@ def plot_enmo_subplots(reference_signal, target_signal_original, target_signal_r
     else:
         plt.close(fig)
 
-    with open(f"{rescaling_log_dir}/rescaling_signals.pickle", "wb") as f:
-        pickle.dump(fig, f)
+    # with open(f"{rescaling_log_dir}/rescaling_signals.pickle", "wb") as f:
+    #     pickle.dump(fig, f)
 
-    fig.savefig(f"{rescaling_log_dir}/rescaling_signals.svg", format="svg", bbox_inches='tight')
+    # fig.savefig(f"{rescaling_log_dir}/rescaling_signals.svg", format="svg", bbox_inches='tight')
+
+    np.savez(
+        f"{rescaling_log_dir}/enmo_signals.npz",
+        reference_enmo_signal=reference_enmo_signal,
+        target_enmo_original_signal=target_enmo_original_signal,
+        target_enmo_rescaled_signal=target_enmo_rescaled_signal,
+    )
 
 
 
@@ -466,26 +473,26 @@ if __name__ == "__main__":
              'PI', 'M', 
              "12:34:11", 12012445, 
              "12:44:20", 13378200, 
-             100, 1,
+             100, 40,
              False)
-    reescala("./data", "PMP1050", 
-             'PI', 'C', 
-             "12:34:11", 12012445, 
-             "12:34:11", 12591189, 
-             100, 1,
-             False)
+#     reescala("./data", "PMP1050", 
+#              'PI', 'C', 
+#              "12:34:11", 12012445, 
+#              "12:34:11", 12591189, 
+#              100, 1,
+#              False)
 
-###
+# ###
 
-    reescala("./data", "PMP1049", 
-             'PI', 'M', 
-             None, None, 
-             None, None, 
-             100, 1,
-             False)
-    reescala("./data", "PMP1049", 
-             'PI', 'C', 
-             None, None, 
-             None, None, 
-             100, 1,
-             False)
+#     reescala("./data", "PMP1049", 
+#              'PI', 'M', 
+#              None, None, 
+#              None, None, 
+#              100, 1,
+#              False)
+#     reescala("./data", "PMP1049", 
+#              'PI', 'C', 
+#              None, None, 
+#              None, None, 
+#              100, 1,
+#              False)

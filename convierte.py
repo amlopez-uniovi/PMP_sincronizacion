@@ -32,3 +32,5 @@ with open("sync_thigh_to_wrist.py", "w") as f:
             f'offset_range, step_range)'
         )
         f.write(line + "\n")
+
+
