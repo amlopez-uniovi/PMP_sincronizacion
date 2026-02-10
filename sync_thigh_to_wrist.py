@@ -1,32 +1,29 @@
 from pmp_sincro import reescala
 
-base_dir = './input'
-segmento_ref = 'PI'
-segmento_target = 'M'
-offset_range = 100
-step_range = 1
+def sincroniza_con_TS(base_dir='./Input', segmento_ref='PI', segmento_target='M', offset_range=125, step_range=1):
 
-reescala(base_dir, "PMP1013", segmento_ref, segmento_target, "13:57:45", 15827015, "14:10:00", 15845712, offset_range, step_range)
-reescala(base_dir, "PMP1017", segmento_ref, segmento_target, "16:55:10", 15439628, "17:05:35", 15462133, offset_range, step_range)
-reescala(base_dir, "PMP1019", segmento_ref, segmento_target, "17:15:07", 15457507, "17:24:57", 15479367, offset_range, step_range)
-reescala(base_dir, "PMP1020", segmento_ref, segmento_target, "10:05:10", 13261111, "10:15:40", 13283396, offset_range, step_range)
-reescala(base_dir, "PMP1021", segmento_ref, segmento_target, "17:37:45", 13896975, "17:50:00", 13930100, offset_range, step_range)
-reescala(base_dir, "PMP1024", segmento_ref, segmento_target, "13:01:30", 15778742, "13:11:16", 15804899, offset_range, step_range)
-reescala(base_dir, "PMP1025", segmento_ref, segmento_target, "10:22:14", 14626462, "10:32:34", 15473433, offset_range, step_range)
-reescala(base_dir, "PMP1026", segmento_ref, segmento_target, "08:59:37", 13269755, "09:09:55", 13308142, offset_range, step_range)
-reescala(base_dir, "PMP1027", segmento_ref, segmento_target, "09:47:40", 13111608, "09:57:17", 13124118, offset_range, step_range)
-reescala(base_dir, "PMP1029", segmento_ref, segmento_target, "18:25:48", 15643090, "18:36:10", 15662478, offset_range, step_range)
-reescala(base_dir, "PMP1030", segmento_ref, segmento_target, "12:48:00", 15457985, "12:58:20", 15473433, offset_range, step_range)
-reescala(base_dir, "PMP1032", segmento_ref, segmento_target, "10:18:27", 15503354, "10:29:30", 15507159, offset_range, step_range)
-reescala(base_dir, "PMP1034", segmento_ref, segmento_target, "17:26:23", 15523050, "17:26:23", 15532460, offset_range, step_range)
-#reescala(base_dir, "PMP1036", segmento_ref, segmento_target, "11:10:30", 13394460, "11:10:30", 13395964, offset_range, step_range)
-reescala(base_dir, "PMP1038", segmento_ref, segmento_target, "12:18:00", 15544668, "12:27:48", 15617055, offset_range, step_range)
-reescala(base_dir, "PMP1039", segmento_ref, segmento_target, "16:18:50", 15543542, "16:18:50", 15563426, offset_range, step_range)
-reescala(base_dir, "PMP1043", segmento_ref, segmento_target, "11:35:52", 15541721, "11:45:32", 15566773, offset_range, step_range)
-reescala(base_dir, "PMP1048", segmento_ref, segmento_target, "17:27:53", 15491902, "17:38:18", 15539305, offset_range, step_range)
-reescala(base_dir, "PMP1050", segmento_ref, segmento_target, "12:34:11", 12012445, "12:44:20", 13378130, offset_range, step_range)
-reescala(base_dir, "PMP1052", segmento_ref, segmento_target, "18:09:30", 15532715, "18:09:30", 15542200, offset_range, step_range)
-reescala(base_dir, "PMP1072", segmento_ref, segmento_target, "10:38:35", 15548963, "10:49:35", 15550451, offset_range, step_range)
-reescala(base_dir, "PMP1075", segmento_ref, segmento_target, "11:01:01", 15574040, "11:01:01", 15526450, offset_range, step_range)
-reescala(base_dir, "PMP1093", segmento_ref, segmento_target, "16:37:47", 15522277, "16:47:52", 15544157, offset_range, step_range)
-reescala(base_dir, "PMP1094", segmento_ref, segmento_target, "11:04:37", 15543226, "11:16:02", 15566808, offset_range, step_range)
+
+    reescala(base_dir, "PMP1013", segmento_ref, segmento_target, "13:57:45", 15827015, "14:10:00", 15845712, offset_range, step_range)
+    reescala(base_dir, "PMP1017", segmento_ref, segmento_target, "16:55:10", 15439628, "17:05:35", 15462133, offset_range, step_range)
+    reescala(base_dir, "PMP1019", segmento_ref, segmento_target, "17:15:07", 15457507, "17:24:57", 15479367, offset_range, step_range)
+    reescala(base_dir, "PMP1020", segmento_ref, segmento_target, "10:05:10", 13261111, "10:15:40", 13283396, offset_range, step_range)
+    reescala(base_dir, "PMP1021", segmento_ref, segmento_target, "17:37:45", 13896975, "17:50:00", 13930100, offset_range, step_range)
+    reescala(base_dir, "PMP1024", segmento_ref, segmento_target, "13:01:30", 15778742, "13:11:16", 15804899, offset_range, step_range)
+    reescala(base_dir, "PMP1025", segmento_ref, segmento_target, "10:22:14", 14626462, "10:32:34", 15473433, offset_range, step_range)
+    reescala(base_dir, "PMP1026", segmento_ref, segmento_target, "08:59:37", 13269755, "09:09:55", 13308142, offset_range, step_range)
+    reescala(base_dir, "PMP1027", segmento_ref, segmento_target, "09:47:40", 13111608, "09:57:17", 13124118, offset_range, step_range)
+    reescala(base_dir, "PMP1029", segmento_ref, segmento_target, "18:25:48", 15643090, "18:36:10", 15662478, offset_range, step_range)
+    reescala(base_dir, "PMP1030", segmento_ref, segmento_target, "12:48:00", 15457985, "12:58:20", 15473433, offset_range, step_range)
+    reescala(base_dir, "PMP1032", segmento_ref, segmento_target, "10:18:27", 15503354, "10:29:30", 15507159, offset_range, step_range)
+    reescala(base_dir, "PMP1034", segmento_ref, segmento_target, "17:26:23", 15523050, "17:26:23", 15532460, offset_range, step_range)
+    reescala(base_dir, "PMP1036", segmento_ref, segmento_target, "11:10:30", 13394460, "11:10:30", 13395964, offset_range, step_range)
+    reescala(base_dir, "PMP1038", segmento_ref, segmento_target, "12:18:00", 15544668, "12:27:48", 15617055, offset_range, step_range)
+    reescala(base_dir, "PMP1039", segmento_ref, segmento_target, "16:18:50", 15543542, "16:18:50", 15563426, offset_range, step_range)
+    reescala(base_dir, "PMP1043", segmento_ref, segmento_target, "11:35:52", 15541721, "11:45:32", 15566773, offset_range, step_range)
+    reescala(base_dir, "PMP1048", segmento_ref, segmento_target, "17:27:53", 15491902, "17:38:18", 15539305, offset_range, step_range)
+    reescala(base_dir, "PMP1050", segmento_ref, segmento_target, "12:34:11", 12012445, "12:44:20", 13378130, offset_range, step_range)
+    reescala(base_dir, "PMP1052", segmento_ref, segmento_target, "18:09:30", 15532715, "18:09:30", 15542200, offset_range, step_range)
+    reescala(base_dir, "PMP1072", segmento_ref, segmento_target, "10:38:35", 15548963, "10:49:35", 15550451, offset_range, step_range)
+    reescala(base_dir, "PMP1075", segmento_ref, segmento_target, "11:01:01", 15574040, "11:01:01", 15526450, offset_range, step_range)
+    reescala(base_dir, "PMP1093", segmento_ref, segmento_target, "16:37:47", 15522277, "16:47:52", 15544157, offset_range, step_range)
+    reescala(base_dir, "PMP1094", segmento_ref, segmento_target, "11:04:37", 15543226, "11:16:02", 15566808, offset_range, step_range)

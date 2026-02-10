@@ -10,6 +10,9 @@ import unicodedata
 import os
 import json
 
+import runpy
+import sys
+
 import wearablepermed_utils.core as WPM_utils
 
 """ 
@@ -469,12 +472,12 @@ def reescala(base_dir, sujeto, segmento_ref, segmento_target, time_sincro_ref_fi
 
 
 if __name__ == "__main__":
-    reescala("./data", "PMP1050", 
-             'PI', 'M', 
-             "12:34:11", 12012445, 
-             "12:44:20", 13378200, 
-             100, 40,
-             False)
+    # reescala("./data", "PMP1050", 
+    #          'PI', 'M', 
+    #          "12:34:11", 12012445, 
+    #          "12:44:20", 13378200, 
+    #          100, 40,
+    #          False)
 #     reescala("./data", "PMP1050", 
 #              'PI', 'C', 
 #              "12:34:11", 12012445, 
@@ -482,6 +485,7 @@ if __name__ == "__main__":
 #              100, 1,
 #              False)
 
+    
 # ###
 
 #     reescala("./data", "PMP1049", 
@@ -496,3 +500,9 @@ if __name__ == "__main__":
 #              None, None, 
 #              100, 1,
 #              False)
+
+    import sync_thigh_to_wrist
+    import sync_thigh_to_wrist_2
+
+    sync_thigh_to_wrist.sincroniza_con_TS()
+    sync_thigh_to_wrist_2.sincroniza_sin_TS()
