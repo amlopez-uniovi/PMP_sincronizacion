@@ -441,8 +441,6 @@ def busca_par_hora_fecha_actividad(ts_array, dic_timing, Dia_1=False,
 
 
 def reescala(base_dir, sujeto, segmento_ref, segmento_target, time_sincro_ref_file, sample_sincro_ref_file, time_sincro_target_file, sample_sincro_target_file, offset_range, step_range, plot_figures = False):
-
-    base_dir = "./data"
         
     inputs = {
             'ref_file': f"{base_dir}/{sujeto}/{sujeto}_W1_{segmento_ref}.csv",
@@ -500,9 +498,4 @@ if __name__ == "__main__":
 #              None, None, 
 #              100, 1,
 #              False)
-
-    import sync_thigh_to_wrist
-    import sync_thigh_to_wrist_2
-
-    sync_thigh_to_wrist.sincroniza_con_TS()
-    sync_thigh_to_wrist_2.sincroniza_sin_TS()
+    pass
