@@ -9,6 +9,7 @@ from datetime import datetime, date, time
 import unicodedata
 import os
 import json
+from scipy import signal
 
 import runpy
 import sys
@@ -21,6 +22,33 @@ def calcular_enmo(ax, ay, az):
     return np.sqrt(ax**2 + ay**2 + az**2) - 1
 
  """
+
+def filtro_paso_bajo(senal, fs=30.0, fc=0.5, order=4):
+    """
+    Aplica un filtro Butterworth paso bajo a una señal.
+    
+    Parámetros:
+    - senal: array 1D con los valores de la señal
+    - fs: frecuencia de muestreo en Hz (por defecto 30 Hz para acelerómetros)
+    - fc: frecuencia de corte en Hz (por defecto 0.5 Hz)
+    - order: orden del filtro (por defecto 4)
+    
+    Retorna:
+    - senal filtrada
+    """
+    if len(senal) < 2 * order:
+        # Si la señal es muy corta, no filtrar
+        return senal
+    
+    # Diseño del filtro Butterworth
+    nyquist = fs / 2.0
+    normal_cutoff = fc / nyquist
+    b, a = signal.butter(order, normal_cutoff, btype='low', analog=False)
+    
+    # Aplicar filtro (filtfilt para evitar desfase)
+    senal_filtrada = signal.filtfilt(b, a, senal)
+    
+    return senal_filtrada
 
 def plot_enmo_subplots(reference_signal, target_signal_original, target_signal_rescaled, rescaling_log_dir, plot_figures):
     """Plot three vertically stacked subplots (timestamp vs ENMO) and save the figure.
@@ -88,7 +116,7 @@ def plot_enmo_subplots(reference_signal, target_signal_original, target_signal_r
 
 def correlacion_con_timestamp(sig1, sig2, start_time=None, end_time=None,
                               first_hours=None, last_hours=None,
-                              min_overlap_seconds=1.0):
+                              min_overlap_seconds=1.0, aplicar_filtro=True, fc=0.02):
     """
     Correlación Pearson entre dos señales con timestamps.
 
@@ -103,12 +131,15 @@ def correlacion_con_timestamp(sig1, sig2, start_time=None, end_time=None,
       `last_hours` horas del intervalo común.
     - min_overlap_seconds: solape mínimo aceptable (por defecto 1s). Si el solape es
       menor, devuelve np.nan.
+    - aplicar_filtro: si es True, aplica un filtro paso bajo a las señales antes de correlacionar
+    - fc: frecuencia de corte del filtro paso bajo en Hz (por defecto 0.5 Hz)
 
     Comportamiento:
     - Las opciones se combinan tomando la intersección del intervalo común con los
       recortes solicitados. first_hours/last_hours se expresan en horas.
     - La función interpola ambas series a una malla temporal común (dt = mediana de
       los dt disponibles) y calcula np.corrcoef sobre esa malla.
+    - Si aplicar_filtro=True, se aplica un filtro paso bajo a ambas señales interpoladas.
     """
 
     # protección básica
@@ -174,6 +205,13 @@ def correlacion_con_timestamp(sig1, sig2, start_time=None, end_time=None,
 
     x1_i = np.interp(t_common, t1, x1)
     x2_i = np.interp(t_common, t2, x2)
+
+    # Aplicar filtro paso bajo si se solicita
+    if aplicar_filtro:
+        # Calcular frecuencia de muestreo a partir de dt
+        fs = 1.0 / dt if dt > 0 else 30.0
+        x1_i = filtro_paso_bajo(x1_i, fs=fs, fc=fc)
+        x2_i = filtro_paso_bajo(x2_i, fs=fs, fc=fc)
 
     # Correlación de Pearson
     # si la varianza es 0 en alguna serie, corrcoef devuelve nan/inf; protegemos
