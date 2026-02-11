@@ -39,37 +39,38 @@ def plot_enmo_subplots(reference_signal, target_signal_original, target_signal_r
     target_enmo_rescaled = np.abs(target_enmo_rescaled)
     target_enmo_rescaled_signal = np.column_stack([target_signal_rescaled[:, 0], target_enmo_rescaled])
 
-    fig, axes = plt.subplots(4, 1, figsize=(10, 8), sharex=True)
-
-    axes[0].plot(reference_enmo_signal[:, 0], reference_enmo_signal[:, 1], color='C0')
-    axes[0].set_ylabel('REF ENMO')
-    axes[0].set_title('PMP_REF - ENMO')
-    axes[0].grid(True)
-
-    axes[1].plot(target_enmo_original_signal[:, 0], target_enmo_original_signal[:, 1], color='C1')
-    axes[1].set_ylabel('TGT ENMO ORIGINAL')
-    axes[1].set_title('PMP_TARGET ORIGINAL - ENMO')
-    axes[1].grid(True)
-
-    axes[2].plot(target_enmo_rescaled_signal[:, 0], target_enmo_rescaled_signal[:, 1], color='C1')
-    axes[2].set_ylabel('TGT ENMO REESCALADO')
-    axes[2].set_title('PMP_TARGET REESCALADO - ENMO')
-    axes[2].grid(True)
-
-    # Plot each raw channel (columns 1..) in a different color and label
-    axes[3].plot(target_signal_rescaled[:, 0], target_signal_rescaled[:, 1:4])
-    axes[3].set_ylabel('TARGET RESCALED')
-    axes[3].set_title('PMP_TARGET - RAW')
-    axes[3].set_xlabel('timestamp')
-    axes[3].legend(loc='upper right')
-    axes[3].grid(True)
-
-    fig.tight_layout()
 
     if plot_figures:
+        fig, axes = plt.subplots(4, 1, figsize=(10, 8), sharex=True)
+    
+        axes[0].plot(reference_enmo_signal[:, 0], reference_enmo_signal[:, 1], color='C0')
+        axes[0].set_ylabel('REF ENMO')
+        axes[0].set_title('PMP_REF - ENMO')
+        axes[0].grid(True)
+
+        axes[1].plot(target_enmo_original_signal[:, 0], target_enmo_original_signal[:, 1], color='C1')
+        axes[1].set_ylabel('TGT ENMO ORIGINAL')
+        axes[1].set_title('PMP_TARGET ORIGINAL - ENMO')
+        axes[1].grid(True)
+
+        axes[2].plot(target_enmo_rescaled_signal[:, 0], target_enmo_rescaled_signal[:, 1], color='C1')
+        axes[2].set_ylabel('TGT ENMO REESCALADO')
+        axes[2].set_title('PMP_TARGET REESCALADO - ENMO')
+        axes[2].grid(True)
+
+        # Plot each raw channel (columns 1..) in a different color and label
+        axes[3].plot(target_signal_rescaled[:, 0], target_signal_rescaled[:, 1:4])
+        axes[3].set_ylabel('TARGET RESCALED')
+        axes[3].set_title('PMP_TARGET - RAW')
+        axes[3].set_xlabel('timestamp')
+        axes[3].legend(loc='upper right')
+        axes[3].grid(True)
+
+        fig.tight_layout()
+
+
         plt.show()
-    else:
-        plt.close(fig)
+
 
     # with open(f"{rescaling_log_dir}/rescaling_signals.pickle", "wb") as f:
     #     pickle.dump(fig, f)
@@ -467,6 +468,8 @@ def reescala(base_dir, sujeto, segmento_ref, segmento_target, time_sincro_ref_fi
     save_reescale_log(best_K, best_offset, correlations, inputs, log_dir)
     np.savez_compressed(f"{base_dir}/{sujeto}/{sujeto}_W1_{segmento_ref}_rescaled.npz", datos=rescaled_ref)
     np.savez_compressed(f"{base_dir}/{sujeto}/{sujeto}_W1_{segmento_target}_rescaled.npz", datos=rescaled_target)
+    print("=========================")    
+    print("\n\n")
 
 
 if __name__ == "__main__":
