@@ -346,11 +346,10 @@ def reescalar_senhal_2(signal_ref_raw, signal_target_raw, activity_file, segment
 
         # Calcular correlación dos ultimas horas
         #corre = correlacion_con_timestamp(signal_ref_enmo, signal_target_scaled_enmo, last_hours=2.0)
-        # Calcular correlación entre 30 s antes y 180 s después de time_sample_sincro
-        if time_sample_sincro is not None:
-            base_date = datetime.fromtimestamp(signal_target_scaled_raw[0, 0] / 1000.0).date()
-            t_centro_dt = datetime.combine(base_date, time_sample_sincro)
-            t_centro = t_centro_dt.timestamp() * 1000.0
+        # Calcular correlación entre 30 s antes y 180 s después del timestamp del índice (sample_sincro + offset)
+        idx_centro = int(sample_sincro + offset)
+        if 0 <= idx_centro < len(signal_target_scaled_raw):
+            t_centro = signal_target_scaled_raw[idx_centro, 0]
             start_time = t_centro - 30_000.0
             end_time = t_centro + 180_000.0
             corre = correlacion_con_timestamp(
