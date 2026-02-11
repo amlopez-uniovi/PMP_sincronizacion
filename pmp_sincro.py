@@ -131,7 +131,7 @@ def plot_enmo_subplots(reference_signal, target_signal_original, target_signal_r
 
 def correlacion_con_timestamp(sig1, sig2, start_time=None, end_time=None,
                               first_hours=None, last_hours=None,
-                              min_overlap_seconds=1.0, aplicar_filtro=True, fc=0.02):
+                              min_overlap_seconds=1.0, aplicar_filtro=False, fc=0.02):
     """
     Correlación Pearson entre dos señales con timestamps.
 
@@ -343,7 +343,22 @@ def reescalar_senhal_2(signal_ref_raw, signal_target_raw, activity_file, segment
         signal_target_scaled_enmo = np.column_stack([signal_target_scaled_raw[:, 0], target_scaled_enmo])
 
         # Calcular correlación dos ultimas horas
-        corre = correlacion_con_timestamp(signal_ref_enmo, signal_target_scaled_enmo, last_hours=2.0)
+        #corre = correlacion_con_timestamp(signal_ref_enmo, signal_target_scaled_enmo, last_hours=2.0)
+        # Calcular correlación entre 30 s antes y 180 s después de time_sample_sincro
+        if time_sample_sincro is not None:
+            base_date = datetime.fromtimestamp(signal_target_scaled_raw[0, 0] / 1000.0).date()
+            t_centro_dt = datetime.combine(base_date, time_sample_sincro)
+            t_centro = t_centro_dt.timestamp() * 1000.0
+            start_time = t_centro - 30_000.0
+            end_time = t_centro + 180_000.0
+            corre = correlacion_con_timestamp(
+                signal_ref_enmo,
+                signal_target_scaled_enmo,
+                start_time=start_time,
+                end_time=end_time,
+            )
+        else:
+            corre = np.nan
 
         # Buscamos la correlación máxima
         if corre > best_corre:
@@ -534,12 +549,13 @@ def reescala(base_dir, sujeto, segmento_ref, segmento_target, time_sincro_ref_fi
 
 
 if __name__ == "__main__":
-    # reescala("./data", "PMP1050", 
-    #          'PI', 'M', 
-    #          "12:34:11", 12012445, 
-    #          "12:44:20", 13378200, 
-    #          100, 40,
-    #          False)
+    reescala("./data", "PMP1050", 
+              'PI', 'M', 
+              "12:34:11", 12012445, 
+              "12:44:20", 13378200, 
+              100, 40,
+              False)
+    
 #     reescala("./data", "PMP1050", 
 #              'PI', 'C', 
 #              "12:34:11", 12012445, 
