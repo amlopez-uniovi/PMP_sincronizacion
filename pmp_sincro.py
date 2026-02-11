@@ -40,9 +40,24 @@ def filtro_paso_bajo(senal, fs=30.0, fc=0.5, order=4):
         # Si la señal es muy corta, no filtrar
         return senal
     
+    # Validar parámetros
+    if fs <= 0 or fc <= 0:
+        return senal
+    
     # Diseño del filtro Butterworth
     nyquist = fs / 2.0
+    
+    # Asegurar que fc < nyquist (la frecuencia de corte debe ser menor que la frecuencia de Nyquist)
+    if fc >= nyquist:
+        # Si fc es muy alta, usar el 90% de la frecuencia de Nyquist
+        fc = nyquist * 0.9
+    
     normal_cutoff = fc / nyquist
+    
+    # Validar que normal_cutoff esté en el rango válido (0, 1)
+    if normal_cutoff <= 0 or normal_cutoff >= 1:
+        return senal
+    
     b, a = signal.butter(order, normal_cutoff, btype='low', analog=False)
     
     # Aplicar filtro (filtfilt para evitar desfase)
@@ -209,9 +224,17 @@ def correlacion_con_timestamp(sig1, sig2, start_time=None, end_time=None,
     # Aplicar filtro paso bajo si se solicita
     if aplicar_filtro:
         # Calcular frecuencia de muestreo a partir de dt
-        fs = 1.0 / dt if dt > 0 else 30.0
-        x1_i = filtro_paso_bajo(x1_i, fs=fs, fc=fc)
-        x2_i = filtro_paso_bajo(x2_i, fs=fs, fc=fc)
+        # Los timestamps suelen estar en milisegundos, así que dt está en ms
+        # fs = 1/dt donde dt está en segundos
+        if dt > 100:  # Si dt > 100, probablemente está en milisegundos
+            fs = 1000.0 / dt  # Convertir de ms a Hz
+        else:
+            fs = 1.0 / dt  # Ya está en segundos
+        
+        # Validar fs antes de filtrar
+        if fs > 0 and fc < fs / 2.0:
+            x1_i = filtro_paso_bajo(x1_i, fs=fs, fc=fc)
+            x2_i = filtro_paso_bajo(x2_i, fs=fs, fc=fc)
 
     # Correlación de Pearson
     # si la varianza es 0 en alguna serie, corrcoef devuelve nan/inf; protegemos
