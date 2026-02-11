@@ -316,6 +316,7 @@ def reescalar_senhal_2(signal_ref_raw, signal_target_raw, activity_file, segment
     #SEÑAL REFERENCIA [TIMESTAMP, ENMO]
     ref_timestamp = signal_ref_raw[:, 0]
     ref_enmo = WPM_utils.ENMO(signal_ref_raw[:, 1:4])
+    ref_enmo = np.abs(ref_enmo)
     signal_ref_enmo = np.column_stack([ref_timestamp, ref_enmo])
 
     #BUCLE DE OFFSETs
@@ -340,6 +341,7 @@ def reescalar_senhal_2(signal_ref_raw, signal_target_raw, activity_file, segment
 
         # SEÑAL REESCALADA [TIMESTAMP, ENMO]
         target_scaled_enmo = WPM_utils.ENMO(signal_target_scaled_raw[:, 1:4])
+        target_scaled_enmo = np.abs(target_scaled_enmo)
         signal_target_scaled_enmo = np.column_stack([signal_target_scaled_raw[:, 0], target_scaled_enmo])
 
         # Calcular correlación dos ultimas horas
