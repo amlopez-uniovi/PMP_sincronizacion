@@ -358,7 +358,7 @@ def reescalar_senhal_2(signal_ref_raw, signal_target_raw, activity_file, segment
                 signal_target_scaled_enmo,
                 start_time=start_time,
                 end_time=end_time,
-                filtrar=True, fc=0.02
+                aplicar_filtro=True, fc=0.02
             )
         else:
             corre = np.nan
