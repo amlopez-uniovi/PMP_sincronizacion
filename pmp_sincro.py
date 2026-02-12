@@ -9,7 +9,6 @@ from datetime import datetime, date, time
 import unicodedata
 import os
 import json
-from scipy import signal
 
 import runpy
 import sys
@@ -23,69 +22,27 @@ def calcular_enmo(ax, ay, az):
 
  """
 
-def filtro_paso_bajo(senal, fs=30.0, fc=0.5, order=4):
-    """
-    Aplica un filtro Butterworth paso bajo a una señal.
-    
-    Parámetros:
-    - senal: array 1D con los valores de la señal
-    - fs: frecuencia de muestreo en Hz (por defecto 30 Hz para acelerómetros)
-    - fc: frecuencia de corte en Hz (por defecto 0.5 Hz)
-    - order: orden del filtro (por defecto 4)
-    
-    Retorna:
-    - senal filtrada
-    """
-    if len(senal) < 2 * order:
-        # Si la señal es muy corta, no filtrar
-        return senal
-    
-    # Validar parámetros
-    if fs <= 0 or fc <= 0:
-        return senal
-    
-    # Diseño del filtro Butterworth
-    nyquist = fs / 2.0
-    
-    # Asegurar que fc < nyquist (la frecuencia de corte debe ser menor que la frecuencia de Nyquist)
-    if fc >= nyquist:
-        # Si fc es muy alta, usar el 90% de la frecuencia de Nyquist
-        fc = nyquist * 0.9
-    
-    normal_cutoff = fc / nyquist
-    
-    # Validar que normal_cutoff esté en el rango válido (0, 1)
-    if normal_cutoff <= 0 or normal_cutoff >= 1:
-        return senal
-    
-    b, a = signal.butter(order, normal_cutoff, btype='low', analog=False)
-    
-    # Aplicar filtro (filtfilt para evitar desfase)
-    senal_filtrada = signal.filtfilt(b, a, senal)
-    
-    return senal_filtrada
-
 def plot_enmo_subplots(reference_signal, target_signal_original, target_signal_rescaled, rescaling_log_dir, plot_figures):
     """Plot three vertically stacked subplots (timestamp vs ENMO) and save the figure.
     argumetos: 
 
     """
-    reference_enmo = WPM_utils.ENMO(reference_signal[:, 1:4])
-    reference_enmo = np.abs(reference_enmo)
-    reference_enmo_signal = np.column_stack([reference_signal[:, 0], reference_enmo])
-
-    target_enmo_original = WPM_utils.ENMO(target_signal_original[:, 1:4])
-    target_enmo_original = np.abs(target_enmo_original)
-    target_enmo_original_signal = np.column_stack([target_signal_original[:, 0], target_enmo_original])
-
-    target_enmo_rescaled = WPM_utils.ENMO(target_signal_rescaled[:, 1:4])
-    target_enmo_rescaled = np.abs(target_enmo_rescaled)
-    target_enmo_rescaled_signal = np.column_stack([target_signal_rescaled[:, 0], target_enmo_rescaled])
-
 
     if plot_figures:
+        reference_enmo = WPM_utils.ENMO(reference_signal[:, 1:4])
+        reference_enmo = np.abs(reference_enmo)
+        reference_enmo_signal = np.column_stack([reference_signal[:, 0], reference_enmo])
+
+        target_enmo_original = WPM_utils.ENMO(target_signal_original[:, 1:4])
+        target_enmo_original = np.abs(target_enmo_original)
+        target_enmo_original_signal = np.column_stack([target_signal_original[:, 0], target_enmo_original])
+
+        target_enmo_rescaled = WPM_utils.ENMO(target_signal_rescaled[:, 1:4])
+        target_enmo_rescaled = np.abs(target_enmo_rescaled)
+        target_enmo_rescaled_signal = np.column_stack([target_signal_rescaled[:, 0], target_enmo_rescaled])
+
         fig, axes = plt.subplots(4, 1, figsize=(10, 8), sharex=True)
-    
+
         axes[0].plot(reference_enmo_signal[:, 0], reference_enmo_signal[:, 1], color='C0')
         axes[0].set_ylabel('REF ENMO')
         axes[0].set_title('PMP_REF - ENMO')
@@ -111,7 +68,6 @@ def plot_enmo_subplots(reference_signal, target_signal_original, target_signal_r
 
         fig.tight_layout()
 
-
         plt.show()
 
 
@@ -131,7 +87,7 @@ def plot_enmo_subplots(reference_signal, target_signal_original, target_signal_r
 
 def correlacion_con_timestamp(sig1, sig2, start_time=None, end_time=None,
                               first_hours=None, last_hours=None,
-                              min_overlap_seconds=1.0, aplicar_filtro=False, fc=0.02):
+                              min_overlap_seconds=1.0):
     """
     Correlación Pearson entre dos señales con timestamps.
 
@@ -146,15 +102,12 @@ def correlacion_con_timestamp(sig1, sig2, start_time=None, end_time=None,
       `last_hours` horas del intervalo común.
     - min_overlap_seconds: solape mínimo aceptable (por defecto 1s). Si el solape es
       menor, devuelve np.nan.
-    - aplicar_filtro: si es True, aplica un filtro paso bajo a las señales antes de correlacionar
-    - fc: frecuencia de corte del filtro paso bajo en Hz (por defecto 0.5 Hz)
 
     Comportamiento:
     - Las opciones se combinan tomando la intersección del intervalo común con los
       recortes solicitados. first_hours/last_hours se expresan en horas.
     - La función interpola ambas series a una malla temporal común (dt = mediana de
       los dt disponibles) y calcula np.corrcoef sobre esa malla.
-    - Si aplicar_filtro=True, se aplica un filtro paso bajo a ambas señales interpoladas.
     """
 
     # protección básica
@@ -220,21 +173,6 @@ def correlacion_con_timestamp(sig1, sig2, start_time=None, end_time=None,
 
     x1_i = np.interp(t_common, t1, x1)
     x2_i = np.interp(t_common, t2, x2)
-
-    # Aplicar filtro paso bajo si se solicita
-    if aplicar_filtro:
-        # Calcular frecuencia de muestreo a partir de dt
-        # Los timestamps suelen estar en milisegundos, así que dt está en ms
-        # fs = 1/dt donde dt está en segundos
-        if dt > 100:  # Si dt > 100, probablemente está en milisegundos
-            fs = 1000.0 / dt  # Convertir de ms a Hz
-        else:
-            fs = 1.0 / dt  # Ya está en segundos
-        
-        # Validar fs antes de filtrar
-        if fs > 0 and fc < fs / 2.0:
-            x1_i = filtro_paso_bajo(x1_i, fs=fs, fc=fc)
-            x2_i = filtro_paso_bajo(x2_i, fs=fs, fc=fc)
 
     # Correlación de Pearson
     # si la varianza es 0 en alguna serie, corrcoef devuelve nan/inf; protegemos
@@ -316,7 +254,6 @@ def reescalar_senhal_2(signal_ref_raw, signal_target_raw, activity_file, segment
     #SEÑAL REFERENCIA [TIMESTAMP, ENMO]
     ref_timestamp = signal_ref_raw[:, 0]
     ref_enmo = WPM_utils.ENMO(signal_ref_raw[:, 1:4])
-    ref_enmo = np.abs(ref_enmo)
     signal_ref_enmo = np.column_stack([ref_timestamp, ref_enmo])
 
     #BUCLE DE OFFSETs
@@ -341,27 +278,10 @@ def reescalar_senhal_2(signal_ref_raw, signal_target_raw, activity_file, segment
 
         # SEÑAL REESCALADA [TIMESTAMP, ENMO]
         target_scaled_enmo = WPM_utils.ENMO(signal_target_scaled_raw[:, 1:4])
-        target_scaled_enmo = np.abs(target_scaled_enmo)
         signal_target_scaled_enmo = np.column_stack([signal_target_scaled_raw[:, 0], target_scaled_enmo])
 
         # Calcular correlación dos ultimas horas
-        #corre = correlacion_con_timestamp(signal_ref_enmo, signal_target_scaled_enmo, last_hours=2.0)
-        # Calcular correlación entre 30 s antes y 180 s después de time_sample_sincro
-        if time_sample_sincro is not None:
-            base_date = datetime.fromtimestamp(signal_target_scaled_raw[0, 0] / 1000.0).date()
-            t_centro_dt = datetime.combine(base_date, time_sample_sincro)
-            t_centro = t_centro_dt.timestamp() * 1000.0
-            start_time = t_centro - 300_000.0
-            end_time = t_centro + 300_000.0
-            corre = correlacion_con_timestamp(
-                signal_ref_enmo,
-                signal_target_scaled_enmo,
-                start_time=start_time,
-                end_time=end_time,
-                aplicar_filtro=True, fc=0.02
-            )
-        else:
-            corre = np.nan
+        corre = correlacion_con_timestamp(signal_ref_enmo, signal_target_scaled_enmo, last_hours=2.0)
 
         # Buscamos la correlación máxima
         if corre > best_corre:
@@ -547,18 +467,15 @@ def reescala(base_dir, sujeto, segmento_ref, segmento_target, time_sincro_ref_fi
     save_reescale_log(best_K, best_offset, correlations, inputs, log_dir)
     np.savez_compressed(f"{base_dir}/{sujeto}/{sujeto}_W1_{segmento_ref}_rescaled.npz", datos=rescaled_ref)
     np.savez_compressed(f"{base_dir}/{sujeto}/{sujeto}_W1_{segmento_target}_rescaled.npz", datos=rescaled_target)
-    print("=========================")    
-    print("\n\n")
 
 
 if __name__ == "__main__":
-    reescala("./data", "PMP1050", 
-              'PI', 'M', 
-              "12:34:11", 12012445, 
-              "12:44:20", 13378200, 
-              100, 40,
-              False)
-    
+    # reescala("./data", "PMP1050", 
+    #          'PI', 'M', 
+    #          "12:34:11", 12012445, 
+    #          "12:44:20", 13378200, 
+    #          100, 40,
+    #          False)
 #     reescala("./data", "PMP1050", 
 #              'PI', 'C', 
 #              "12:34:11", 12012445, 
