@@ -28,19 +28,20 @@ def plot_enmo_subplots(reference_signal, target_signal_original, target_signal_r
 
     """
 
+
+    reference_enmo = WPM_utils.ENMO(reference_signal[:, 1:4])
+    reference_enmo = np.abs(reference_enmo)
+    reference_enmo_signal = np.column_stack([reference_signal[:, 0], reference_enmo])
+
+    target_enmo_original = WPM_utils.ENMO(target_signal_original[:, 1:4])
+    target_enmo_original = np.abs(target_enmo_original)
+    target_enmo_original_signal = np.column_stack([target_signal_original[:, 0], target_enmo_original])
+
+    target_enmo_rescaled = WPM_utils.ENMO(target_signal_rescaled[:, 1:4])
+    target_enmo_rescaled = np.abs(target_enmo_rescaled)
+    target_enmo_rescaled_signal = np.column_stack([target_signal_rescaled[:, 0], target_enmo_rescaled])
+
     if plot_figures:
-        reference_enmo = WPM_utils.ENMO(reference_signal[:, 1:4])
-        reference_enmo = np.abs(reference_enmo)
-        reference_enmo_signal = np.column_stack([reference_signal[:, 0], reference_enmo])
-
-        target_enmo_original = WPM_utils.ENMO(target_signal_original[:, 1:4])
-        target_enmo_original = np.abs(target_enmo_original)
-        target_enmo_original_signal = np.column_stack([target_signal_original[:, 0], target_enmo_original])
-
-        target_enmo_rescaled = WPM_utils.ENMO(target_signal_rescaled[:, 1:4])
-        target_enmo_rescaled = np.abs(target_enmo_rescaled)
-        target_enmo_rescaled_signal = np.column_stack([target_signal_rescaled[:, 0], target_enmo_rescaled])
-
         fig, axes = plt.subplots(4, 1, figsize=(10, 8), sharex=True)
 
         axes[0].plot(reference_enmo_signal[:, 0], reference_enmo_signal[:, 1], color='C0')
@@ -254,7 +255,7 @@ def reescalar_senhal_2(signal_ref_raw, signal_target_raw, activity_file, segment
     #SEÑAL REFERENCIA [TIMESTAMP, ENMO]
     ref_timestamp = signal_ref_raw[:, 0]
     ref_enmo = WPM_utils.ENMO(signal_ref_raw[:, 1:4])
-    signal_ref_enmo = np.column_stack([ref_timestamp, ref_enmo])
+    signal_ref_enmo = np.column_stack([ref_timestamp, np.abs(ref_enmo)])
 
     #BUCLE DE OFFSETs
     sample_offset = np.arange(-offset_range, offset_range, offset_step)
@@ -278,7 +279,7 @@ def reescalar_senhal_2(signal_ref_raw, signal_target_raw, activity_file, segment
 
         # SEÑAL REESCALADA [TIMESTAMP, ENMO]
         target_scaled_enmo = WPM_utils.ENMO(signal_target_scaled_raw[:, 1:4])
-        signal_target_scaled_enmo = np.column_stack([signal_target_scaled_raw[:, 0], target_scaled_enmo])
+        signal_target_scaled_enmo = np.column_stack([signal_target_scaled_raw[:, 0], np.abs(target_scaled_enmo)])
 
         # Calcular correlación dos ultimas horas
         corre = correlacion_con_timestamp(signal_ref_enmo, signal_target_scaled_enmo, last_hours=2.0)
