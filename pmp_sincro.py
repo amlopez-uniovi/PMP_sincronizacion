@@ -1,6 +1,8 @@
 import matplotlib.pyplot as plt
 import matplotlib as mpl
-import pickle
+
+
+import scipy.signal as signal
 
 mpl.use("TkAgg")
 
@@ -10,7 +12,6 @@ import unicodedata
 import os
 import json
 
-import runpy
 import sys
 
 import wearablepermed_utils.core as WPM_utils
@@ -84,11 +85,21 @@ def plot_enmo_subplots(reference_signal, target_signal_original, target_signal_r
         target_enmo_rescaled_signal=target_enmo_rescaled_signal,
     )
 
+def butter_lowpass(cutoff, fs, order=4):
+    nyq = 0.5 * fs
+    normal_cutoff = cutoff / nyq
+    b, a = butter(order, normal_cutoff, btype='low', analog=False)
+    return b, a
+
+def lowpass_filter(data, cutoff, fs, order=4):
+    b, a = butter_lowpass(cutoff, fs, order=order)
+    y = filtfilt(b, a, data)
+    return y   
 
 
 def correlacion_con_timestamp(sig1, sig2, start_time=None, end_time=None,
                               first_hours=None, last_hours=None,
-                              min_overlap_seconds=1.0):
+                              min_overlap_seconds=1.0, tomar_abs=False, filtrar_paso_bajo=False):
     """
     Correlación Pearson entre dos señales con timestamps.
 
@@ -175,6 +186,11 @@ def correlacion_con_timestamp(sig1, sig2, start_time=None, end_time=None,
     x1_i = np.interp(t_common, t1, x1)
     x2_i = np.interp(t_common, t2, x2)
 
+
+    if(filtrar_paso_bajo):
+
+
+
     # Correlación de Pearson
     # si la varianza es 0 en alguna serie, corrcoef devuelve nan/inf; protegemos
     if np.nanstd(x1_i) == 0 or np.nanstd(x2_i) == 0:
@@ -189,14 +205,49 @@ def correlacion_con_timestamp(sig1, sig2, start_time=None, end_time=None,
 ##########################################
 
 
+
+
+def reescala(base_dir, sujeto, segmento_ref, segmento_target, time_sincro_ref_file, sample_sincro_ref_file, time_sincro_target_file, sample_sincro_target_file, offset_range, step_range, plot_figures = False):
+        
+    inputs = {
+            'ref_file': f"{base_dir}/{sujeto}/{sujeto}_W1_{segmento_ref}.csv",
+            'segment_ref_file': segmento_ref,
+            'time_sincro_ref_file': time_sincro_ref_file,
+            'sample_sincro_ref_file': sample_sincro_ref_file,
+            'target_file': f"{base_dir}/{sujeto}/{sujeto}_W1_{segmento_target}.csv",
+            'activity_file': f"{base_dir}/{sujeto}/{sujeto}_RegistroActividades.xlsx",
+            'segment_target_file': segmento_target,
+            'sample_sincro_target_file': sample_sincro_target_file,
+            'time_sincro_target_file': time_sincro_target_file,
+            'offset_range': offset_range,
+            'offset_step': step_range,   
+        }
+    
+    log_dir = f"{base_dir}/{sujeto}/rescaling_log_{segmento_target}"
+    os.makedirs(log_dir, exist_ok=True)
+    print(f"Created or exists: {log_dir}")
+
+    rescaled_ref, rescaled_target, correlations, best_K, best_offset = reescalar_senhal(inputs, log_dir, plot_figures)
+    
+    print("#----------------------------------------#")
+    print(f"Mejor K para {sujeto}_{segmento_target}:", best_K)
+    print(f"Mejor offset para {sujeto}_{segmento_target}:", best_offset)
+
+    save_reescale_log(best_K, best_offset, correlations, inputs, log_dir)
+
+    np.savez_compressed(f"{base_dir}/{sujeto}/{sujeto}_W1_{segmento_ref}_rescaled.npz", datos=rescaled_ref)
+    np.savez_compressed(f"{base_dir}/{sujeto}/{sujeto}_W1_{segmento_target}_rescaled.npz", datos=rescaled_target)
+
+
 def reescalar_senhal(dict, rescaling_log_dir, plot_figures):
+
     ref_file = dict['ref_file']
-    segment_ref_file = dict['segment ref file']
+    segment_ref_file = dict['segment_ref_file']
     time_sincro_ref_file = datetime.strptime(dict['time_sincro_ref_file'], "%H:%M:%S").time() if dict.get('time_sincro_ref_file') else None
     sample_sincro_ref_file = dict['sample_sincro_ref_file']
     target_file = dict['target_file']
     activity_file = dict['activity_file']
-    segment_target_file = dict['segment target file']
+    segment_target_file = dict['segment_target_file']
     sample_sincro_target_file = dict['sample_sincro_target_file']
     time_sincro_target_file = datetime.strptime(dict['time_sincro_target_file'], "%H:%M:%S").time() if dict.get('time_sincro_target_file') else None
     offset_range = dict['offset_range']
@@ -234,8 +285,8 @@ def reescalar_senhal(dict, rescaling_log_dir, plot_figures):
         sample_sincro_target_file = muestra_M
 
     best_signal_target_scaled_raw, correlations, best_K, best_offset = reescalar_senhal_2(ref_scaled_data, tgt_scaled_data, activity_file, segment_target_file, sample_sincro_target_file, time_sincro_target_file, offset_range, offset_step, rescaling_log_dir, plot_figures)
-    plot_enmo_subplots(ref_scaled_data, tgt_scaled_data, best_signal_target_scaled_raw, rescaling_log_dir, plot_figures)
 
+    plot_enmo_subplots(ref_scaled_data, tgt_scaled_data, best_signal_target_scaled_raw, rescaling_log_dir, plot_figures)
 
     return ref_scaled_data, best_signal_target_scaled_raw, correlations, best_K, best_offset
 
@@ -282,7 +333,7 @@ def reescalar_senhal_2(signal_ref_raw, signal_target_raw, activity_file, segment
         signal_target_scaled_enmo = np.column_stack([signal_target_scaled_raw[:, 0], np.abs(target_scaled_enmo)])
 
         # Calcular correlación dos ultimas horas
-        corre = correlacion_con_timestamp(signal_ref_enmo, signal_target_scaled_enmo, last_hours=2.0)
+        corre = correlacion_con_timestamp(signal_ref_enmo, signal_target_scaled_enmo, last_hours=2.0, tomar_abs = True, filtrar_paso_bajo = True)
 
         # Buscamos la correlación máxima
         if corre > best_corre:
@@ -439,35 +490,6 @@ def busca_par_hora_fecha_actividad(ts_array, dic_timing, Dia_1=False,
 
     return hora_fecha, muestra
 
-
-
-def reescala(base_dir, sujeto, segmento_ref, segmento_target, time_sincro_ref_file, sample_sincro_ref_file, time_sincro_target_file, sample_sincro_target_file, offset_range, step_range, plot_figures = False):
-        
-    inputs = {
-            'ref_file': f"{base_dir}/{sujeto}/{sujeto}_W1_{segmento_ref}.csv",
-            'segment ref file': segmento_ref,
-            'time_sincro_ref_file': time_sincro_ref_file,
-            'sample_sincro_ref_file': sample_sincro_ref_file,
-            'target_file': f"{base_dir}/{sujeto}/{sujeto}_W1_{segmento_target}.csv",
-            'activity_file': f"{base_dir}/{sujeto}/{sujeto}_RegistroActividades.xlsx",
-            'segment target file': segmento_target,
-            'sample_sincro_target_file': sample_sincro_target_file,
-            'time_sincro_target_file': time_sincro_target_file,
-            'offset_range': offset_range,
-            'offset_step': step_range,   
-        }
-    
-    log_dir = f"{base_dir}/{sujeto}/rescaling_log_{segmento_target}"
-    os.makedirs(log_dir, exist_ok=True)
-    print(f"Created or exists: {log_dir}")
-
-    rescaled_ref, rescaled_target, correlations, best_K, best_offset = reescalar_senhal(inputs, log_dir, plot_figures)
-    print("#----------------------------------------#")
-    print(f"Mejor K para {sujeto}_{segmento_target}:", best_K)
-    print(f"Mejor offset para {sujeto}_{segmento_target}:", best_offset)
-    save_reescale_log(best_K, best_offset, correlations, inputs, log_dir)
-    np.savez_compressed(f"{base_dir}/{sujeto}/{sujeto}_W1_{segmento_ref}_rescaled.npz", datos=rescaled_ref)
-    np.savez_compressed(f"{base_dir}/{sujeto}/{sujeto}_W1_{segmento_target}_rescaled.npz", datos=rescaled_target)
 
 
 if __name__ == "__main__":
