@@ -16,12 +16,8 @@ import sys
 
 import wearablepermed_utils.core as WPM_utils
 
-""" 
-# Extraer timestamp (columna 0) y calcular ENMO (columnas 1, 2, 3)
-def calcular_enmo(ax, ay, az):
-    return np.sqrt(ax**2 + ay**2 + az**2) - 1
+from scipy.signal import butter, filtfilt
 
- """
 
 def plot_enmo_subplots(reference_signal, target_signal_original, target_signal_rescaled, rescaling_log_dir, plot_figures):
     """Plot three vertically stacked subplots (timestamp vs ENMO) and save the figure.
@@ -73,11 +69,6 @@ def plot_enmo_subplots(reference_signal, target_signal_original, target_signal_r
         plt.show()
 
 
-    # with open(f"{rescaling_log_dir}/rescaling_signals.pickle", "wb") as f:
-    #     pickle.dump(fig, f)
-
-    # fig.savefig(f"{rescaling_log_dir}/rescaling_signals.svg", format="svg", bbox_inches='tight')
-
     np.savez(
         f"{rescaling_log_dir}/enmo_signals.npz",
         reference_enmo_signal=reference_enmo_signal,
@@ -85,16 +76,32 @@ def plot_enmo_subplots(reference_signal, target_signal_original, target_signal_r
         target_enmo_rescaled_signal=target_enmo_rescaled_signal,
     )
 
-def butter_lowpass(cutoff, fs, order=4):
-    nyq = 0.5 * fs
-    normal_cutoff = cutoff / nyq
-    b, a = butter(order, normal_cutoff, btype='low', analog=False)
-    return b, a
+def lowpass_filtfilt(x, cutoff_hz, fs_hz, order=4):
+    """
+    Filtro pasa bajo sin cambio de tamaño ni desfase.
+    """
+    nyq = 0.5 * fs_hz
+    normal_cutoff = cutoff_hz / nyq
 
-def lowpass_filter(data, cutoff, fs, order=4):
-    b, a = butter_lowpass(cutoff, fs, order=order)
-    y = filtfilt(b, a, data)
-    return y   
+    b, a = butter(order, normal_cutoff, btype='low', analog=False)
+    y = filtfilt(b, a, x)
+
+    return y
+
+def moving_average_filter(data, window_seconds, fs_hz, passes=1):
+    window_samples = int(window_seconds * fs_hz)
+
+    if window_samples < 1:
+        raise ValueError("window too small")
+
+    kernel = np.ones(window_samples) / window_samples
+
+    y = data.copy()
+
+    for _ in range(passes):
+        y = np.convolve(y, kernel, mode='same')
+
+    return y
 
 
 def correlacion_con_timestamp(sig1, sig2, start_time=None, end_time=None,
@@ -186,13 +193,29 @@ def correlacion_con_timestamp(sig1, sig2, start_time=None, end_time=None,
     x1_i = np.interp(t_common, t1, x1)
     x2_i = np.interp(t_common, t2, x2)
 
+    if filtrar_paso_bajo:
 
-    if(filtrar_paso_bajo):
+        fs_hz = 1000.0 / dt     # si tus timestamps están en ms
+        cutoff_hz = 0.03        # ~ equivalente a ventana de 30s (aprox)
 
+        x1_i = lowpass_filtfilt(x1_i, cutoff_hz, fs_hz, order=4)
+        x2_i = lowpass_filtfilt(x2_i, cutoff_hz, fs_hz, order=4)
 
+        plt.figure()
+        plt.subplot(2, 1, 1)
+        plt.plot(t_common, x1_i, label='Referencia')
+        plt.subplot(2, 1, 2)
+        plt.plot(t_common, x2_i, label='Objetivo')
+        plt.legend()
+        plt.show()
+
+    # Aplicar valor absoluto si se solicita
+    if tomar_abs:
+        x1_i = np.abs(x1_i)
+        x2_i = np.abs(x2_i)
 
     # Correlación de Pearson
-    # si la varianza es 0 en alguna serie, corrcoef devuelve nan/inf; protegemos
+    # si la varianza es 0 en alguna serie, corrcoef devuelve nan/inf;s protegemos
     if np.nanstd(x1_i) == 0 or np.nanstd(x2_i) == 0:
         return np.nan
 
@@ -493,32 +516,12 @@ def busca_par_hora_fecha_actividad(ts_array, dic_timing, Dia_1=False,
 
 
 if __name__ == "__main__":
-    # reescala("./data", "PMP1050", 
-    #          'PI', 'M', 
-    #          "12:34:11", 12012445, 
-    #          "12:44:20", 13378200, 
-    #          100, 40,
-    #          False)
-#     reescala("./data", "PMP1050", 
-#              'PI', 'C', 
-#              "12:34:11", 12012445, 
-#              "12:34:11", 12591189, 
-#              100, 1,
-#              False)
 
-    
-# ###
 
-#     reescala("./data", "PMP1049", 
-#              'PI', 'M', 
-#              None, None, 
-#              None, None, 
-#              100, 1,
-#              False)
-#     reescala("./data", "PMP1049", 
-#              'PI', 'C', 
-#              None, None, 
-#              None, None, 
-#              100, 1,
-#              False)
-    pass
+    base_dir = '/mnt/nvme1n2/git/uniovi-simur-wearablepermed-data/input'
+    segmento_ref = 'PI'
+    segmento_target = 'M'
+    offset_range = 100
+    step_range = 1
+
+    reescala(base_dir, "PMP1017", segmento_ref, segmento_target, "16:55:10", 15439628, "17:05:35", 15462133, offset_range, step_range)
